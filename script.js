@@ -84,10 +84,15 @@ var setupFavorites = function() {
   $list.empty();
   _.each(favorites, function(stopId) {
     var stop = _.findWhere(stops, {id: stopId});
-    $list.append('<li class="list-group-item" data-id="' + stop.id +
-                 '" data-lat="' + stop.lat + '" data-lon="' +
-                 stop.lon + '" data-title="' + stop.title +
-                 '">' + stop.title + '</li>');
+    $list.append(
+      $('<li/>', {
+        "class": "list-group-item",
+        "data-id": stop.id,
+        "data-lat": stop.lat,
+        "data-lon": stop.lon,
+        "data-title": stop.title,
+        text: stop.title
+        }));
   });
   $list.find('.list-group-item').click(function() {
     stop = $(this).data();
