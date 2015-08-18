@@ -15,28 +15,38 @@ def get path
 end
 
 routesXML = get 'http://webservices.nextbus.com/service/publicXMLFeed?command=routeList&a=mbta'
-routes = routesXML.scan(/tag="([^"]+)"/).flatten
+routes = routesXML.scan(/tag="([^"]+)" title="([^"]+)"/)
 
 stops = {};
 
-routes.each do |r|
+routes.each do |(route_id, route_title)|
   sleep 11
-  STDERR.puts "#{r}.."
+  # clean up the MBTA NextBus API's route titles a little bit
+  route_title = route_title\
+    .sub('Silver Line SL', 'SL')\
+    .sub('Silver Line Waterfront', 'SLWay')\
+    .sub(/^Ct/, 'CT')
+  STDERR.puts "#{route_title}.."
   begin
-    stopsXML = get "http://webservices.nextbus.com/service/publicXMLFeed?command=routeConfig&a=mbta&r=#{r}"
+    stopsXML = get "http://webservices.nextbus.com/service/publicXMLFeed?command=routeConfig&a=mbta&r=#{route_id}"
     stopsTags = stopsXML.scan(/<stop tag="[^"]*" title="[^"]*" lat="[^"]*" lon="[^"]*" stopId="[^"]*"\/>/)
-  
+
     stopsTags.each do |stopTag|
       id = /stopId="([^"]+)"/.match(stopTag)[1]
-      stops[id] = {
-        :id => id,
-        :lat => /lat="([^"]+)"/.match(stopTag)[1],
-        :lon => /lon="([^"]+)"/.match(stopTag)[1],
-        :title => /title="([^"]+)"/.match(stopTag)[1]
-      }
+      if stops[id].nil?
+        stops[id] = {
+          :id => id,
+          :lat => /lat="([^"]+)"/.match(stopTag)[1],
+          :lon => /lon="([^"]+)"/.match(stopTag)[1],
+          :title => /title="([^"]+)"/.match(stopTag)[1],
+          :routes => [route_title]
+        }
+      else
+        stops[id][:routes].push route_title
+      end
     end
-  rescue
-    STDERR.puts "An error occurred for in route #{r}"
+#  rescue
+#    STDERR.puts "An error occurred for route #{route_title}"
   end
 end
 
