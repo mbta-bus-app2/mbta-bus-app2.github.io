@@ -78,7 +78,14 @@ var closeMenus = function() {
 };
 
 var stopNickname = function(stop) {
-  return stop.title + ' (' + stop.routes.join(', ') + ')';
+  var routes = stop.routes;
+  var routes_abbr;
+  if(routes.length > 4) {
+    routes_abbr = routes.slice(0, 3).join(', ') + '...';
+  } else {
+    routes_abbr = routes.join(', ');
+  }
+  return stop.title + ' (' + routes_abbr + ')';
 }
 
 var setupFavorites = function() {
