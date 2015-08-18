@@ -89,8 +89,7 @@ var stopNickname = function(stop) {
 }
 
 var setupFavorites = function() {
-  var $menu = $('.menu.favorites');
-  var $list = $menu.find('.list-group');
+  var $list = $('#favorites-list');
   var favorites = storage('favorites');
   $list.empty();
   _.each(favorites, function(stopId) {
@@ -104,13 +103,6 @@ var setupFavorites = function() {
         "data-title": stop.title,
         text: stopNickname(stop)
         }));
-  });
-  $list.find('.list-group-item').click(function() {
-    stop = $(this).data();
-    setLocation(stop.lat, stop.lon, 17);
-    setCurrentStop(stop);
-    loadStop(stop);
-    closeMenus();
   });
 };
 
@@ -329,6 +321,14 @@ function initialize() {
       checkFavorite(currentStop);
       alert('Favorites and most recent location have been cleared from this device');
     }
+  });
+
+  $('#favorites-list').on('click', 'li', function() {
+    var stop = $(this).data();
+    setLocation(stop.lat, stop.lon, 17);
+    setCurrentStop(stop);
+    loadStop(stop);
+    closeMenus();
   });
 
   window.onpopstate = function(event) {
