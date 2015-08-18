@@ -300,6 +300,7 @@ function initialize() {
     closeMenus();
     $('#menu-nav li.favorites').addClass('active');
     $('.menu.favorites').show();
+    $('.menu.favorites button.close-menu').focus();
     pushState('favorites');
   });
 
