@@ -77,6 +77,10 @@ var closeMenus = function() {
   $('.menu').hide();
 };
 
+var stopNickname = function(stop) {
+  return stop.title + ' (' + stop.routes.join(', ') + ')';
+}
+
 var setupFavorites = function() {
   var $menu = $('.menu.favorites');
   var $list = $menu.find('.list-group');
@@ -91,7 +95,7 @@ var setupFavorites = function() {
         "data-lat": stop.lat,
         "data-lon": stop.lon,
         "data-title": stop.title,
-        text: stop.title
+        text: stopNickname(stop)
         }));
   });
   $list.find('.list-group-item').click(function() {
