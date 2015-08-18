@@ -63,8 +63,21 @@ body {
     z-index: 20;
 }
 
-.menu.favorites li {
-  cursor: pointer;
+#favorites-list a {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: 10px 15px;
+  margin-bottom: -1px;
+  background-color: #FFF;
+  border: 1px solid #DDD;
+  border-width: 1px 0px;
+}
+#favorites-list li:first-child a {
+  border-top-width: 0px;
+}
+#favorites-list li:last-child a {
+  border-bottom-width: 0px;
 }
 
 #predictions {

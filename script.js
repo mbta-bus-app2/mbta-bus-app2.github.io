@@ -96,13 +96,16 @@ var setupFavorites = function() {
     var stop = _.findWhere(stops, {id: stopId});
     $list.append(
       $('<li/>', {
-        "class": "list-group-item",
-        "data-id": stop.id,
-        "data-lat": stop.lat,
-        "data-lon": stop.lon,
-        "data-title": stop.title,
-        text: stopNickname(stop)
-        }));
+        }).append(
+        $('<a/>', {
+//        "class": "list-group-item",
+          "href": "#stops/"+stopId,
+          "data-id": stop.id,
+          "data-lat": stop.lat,
+          "data-lon": stop.lon,
+          "data-title": stop.title,
+          text: stopNickname(stop)
+          })));
   });
 };
 
@@ -323,7 +326,7 @@ function initialize() {
     }
   });
 
-  $('#favorites-list').on('click', 'li', function() {
+  $('#favorites-list').on('click', 'a', function() {
     var stop = $(this).data();
     setLocation(stop.lat, stop.lon, 17);
     setCurrentStop(stop);
