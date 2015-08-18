@@ -192,9 +192,49 @@ var initialLocation;
 var boston = { lat: 42.38, lng: -71.1, zoom: 12 };
 var browserSupportFlag;
 var map;
+var locationBeforeGmapsLoads;
 function setLocation(lat, lng, zoom) {
-  map.setCenter(new google.maps.LatLng(lat, lng));
-  map.setZoom(zoom);
+  if(map) {
+    map.setCenter(new google.maps.LatLng(lat, lng));
+    map.setZoom(zoom);
+  } else {
+    locationBeforeGmapsLoads = { lat: lat, lng: lng, zoom: zoom };
+  }
+}
+window.onGmapsLoad = function() {
+  var myOptions = {
+    zoom: 12,
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  };
+  map = new google.maps.Map(document.getElementById("map"), myOptions);
+  google.maps.event.addListener(map, 'bounds_changed', function() {
+    storage('zoom', map.getZoom());
+    storage('lat', map.getCenter().lat());
+    storage('lng', map.getCenter().lng());
+  });
+  var l = locationBeforeGmapsLoads;
+  if(l) {
+    setLocation(l.lat, l.lng, l.zoom);
+  }
+  // for now, assume stops is already loaded
+  onGmapsAndStopsLoad();
+}
+function onGmapsAndStopsLoad() {
+  for (var i = 0; i < stops.length; i++) {
+    (function(stop) {
+      var pos =  new google.maps.LatLng(stop.lat, stop.lon);
+      var marker = new google.maps.Marker({
+        position: pos,
+        map: map,
+        title: stop.title
+      });
+      google.maps.event.addListener(marker, 'click', function() {
+        setCurrentStop(stop);
+        loadStop(stop);
+        pushState('stops/' + stop.id);
+      });
+    })(stops[i]);
+  }
 }
 
 function setLocationToNonGeolocatedDefault() {
@@ -224,35 +264,8 @@ var geolocate = function(callback) {
 };
 
 function initialize() {
-  var myOptions = {
-    zoom: 12,
-    mapTypeId: google.maps.MapTypeId.ROADMAP
-  };
-  map = new google.maps.Map(document.getElementById("map"), myOptions);
   setLocationToNonGeolocatedDefault();
   geolocate();
-
-  google.maps.event.addListener(map, 'bounds_changed', function() {
-    storage('zoom', map.getZoom());
-    storage('lat', map.getCenter().lat());
-    storage('lng', map.getCenter().lng());
-  });
-
-  for (var i = 0; i < stops.length; i++) {
-    (function(stop) {
-      var pos =  new google.maps.LatLng(stop.lat, stop.lon);
-      var marker = new google.maps.Marker({
-        position: pos,
-        map: map,
-        title: stop.title
-      });
-      google.maps.event.addListener(marker, 'click', function() {
-        setCurrentStop(stop);
-        loadStop(stop);
-        pushState('stops/' + stop.id);
-      });
-    })(stops[i]);
-  }
 
   $('#predictions').find('.close-predictions').click(function() {
     $('#predictions').hide();
@@ -348,7 +361,7 @@ function initialize() {
   autoReload();
 }
 
-google.maps.event.addDomListener(window, 'load', initialize);
+$(initialize);
 
 var countDownTimer;
 var countDown = function() {
