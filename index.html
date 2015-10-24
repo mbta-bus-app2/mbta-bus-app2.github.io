@@ -5,6 +5,7 @@
     <title>MBTA Bus App</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <link rel="stylesheet" href="libs/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="libs/leaflet/leaflet.css" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -114,6 +115,7 @@
     <script src="stops.js"></script>
     <script src="libs/qtree.js"></script>
     <script src="script.js"></script>
-    <script async src="//maps.googleapis.com/maps/api/js?key=AIzaSyC_RZqN8YtGM6RmHsi9QgOVZhrgYkyDvhA&amp;sensor=true&amp;callback=onGmapsLoad"></script>
+    <script src="libs/leaflet/leaflet.js"></script>
+    <script>$(function(){ window.onGmapsLoad(); });</script>
   </body>
 </html>

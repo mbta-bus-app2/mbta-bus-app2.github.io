@@ -1,3 +1,4 @@
+
 var storage = function(key, value) {
   if (_.isUndefined(value)) {
     try {
@@ -190,45 +191,67 @@ var map;
 var locationBeforeGmapsLoads;
 function setLocation(lat, lng, zoom) {
   if(map) {
-    map.setCenter(new google.maps.LatLng(lat, lng));
-    map.setZoom(zoom);
+    map.setView([lat, lng], zoom);
   } else {
     locationBeforeGmapsLoads = { lat: lat, lng: lng, zoom: zoom };
   }
 }
 window.onGmapsLoad = function() {
-  var myOptions = {
-    zoom: 12,
-    mapTypeId: google.maps.MapTypeId.ROADMAP
-  };
-  map = new google.maps.Map(document.getElementById("map"), myOptions);
-  google.maps.event.addListener(map, 'bounds_changed', function() {
-    storage('zoom', map.getZoom());
-    storage('lat', map.getCenter().lat());
-    storage('lng', map.getCenter().lng());
-  });
+  var mapboxToken = 'pk.eyJ1IjoiaWR1cHJlZSIsImEiOiJjaWc0YWptZ3gyajM1dTZtNGE3bTQ5eXpsIn0.3Qg8rPAocJzPYt5xKzABDg';
+  var mapboxTiles = L.tileLayer(
+    //'https://api.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}.png?access_token={accessToken}', {
+    //'https://api.mapbox.com/v4/mapbox.emerald/{z}/{x}/{y}.png?access_token={accessToken}', {
+    'https://api.mapbox.com/v4/mapbox.run-bike-hike/{z}/{x}/{y}.png?access_token={accessToken}', {
+    //'https://api.mapbox.com/v4/mapbox.streets-satellite/{z}/{x}/{y}.png?access_token={accessToken}', {
+      attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank">Terms &amp; Feedback</a>',
+      maxZoom: 18,
+      accessToken: mapboxToken
+    });
+
   var l = locationBeforeGmapsLoads;
-  if(l) {
-    setLocation(l.lat, l.lng, l.zoom);
+  var center = (l ? [l.lat, l.lng] : [boston.lat, boston.lng]);
+  var zoom = (l ? l.zoom : boston.zoom);
+  map = L.map('map', {
+    center: center,
+    zoom: zoom,
+    layers: mapboxTiles,
+    // In the current leaflet beta:
+    // - with canvas, zooming doesn't look as good
+    // - in chrome, svg is super fast and awesome, and canvas is decently fast
+    // - in firefox, svg is horribly slow and canvas is rather slow
+    // - haven't tested in IE yet
+    // Leaflet defaults to SVG.
+    // This setting, if 'true', overrides that to default to canvas.
+    // This is my current heuristic:
+    preferCanvas: L.Browser.gecko
+    });
+  function onMapClick(e) {
+    nearestStopsTo(e.latlng, 10000, function(stop, distance) {
+      setCurrentStop(stop);
+      loadStop(stop);
+      pushState('stops/' + stop.id);
+
+      return false; //break
+    });
   }
+  map.on('click', onMapClick);
+  map.on('move', function(e) {
+    storage('zoom', map.getZoom());
+    storage('lat', map.getCenter().lat);
+    storage('lng', map.getCenter().lng);
+  });
   // for now, assume stops is already loaded
   onGmapsAndStopsLoad();
 }
 function onGmapsAndStopsLoad() {
   for (var i = 0; i < stops.length; i++) {
-    (function(stop) {
-      var pos =  new google.maps.LatLng(stop.lat, stop.lon);
-      var marker = new google.maps.Marker({
-        position: pos,
-        map: map,
-        title: stop.title
-      });
-      google.maps.event.addListener(marker, 'click', function() {
-        setCurrentStop(stop);
-        loadStop(stop);
-        pushState('stops/' + stop.id);
-      });
-    })(stops[i]);
+    var stop = stops[i];
+    L.circle([stop.lat, stop.lon], 10, {
+      //stroke: false,
+      weight: 3,
+      color: '#f70',
+      fillOpacity: 0.7
+    }).addTo(map);
   }
 }
 
