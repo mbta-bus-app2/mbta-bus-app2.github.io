@@ -387,6 +387,7 @@ function initialize() {
 
   $('#predictions').find('.close-predictions').click(function() {
     $('#predictions').hide();
+    currentStop = null;
     pushState('map');
   });
 
