@@ -12,6 +12,7 @@ body {
 
 #map {
     height: 100%;
+    cursor: pointer;
 }
 
 .close {
