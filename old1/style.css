@@ -1,0 +1,142 @@
+html {
+    height: 100%
+}
+
+a:active, a:hover, .list-group-item:active, .list-group-item:hover {
+  background-color: #eee !important;
+}
+
+body {
+    height: 100%; margin: 0; padding: 0
+}
+
+#map {
+    height: 100%;
+}
+
+.close {
+  opacity: 0.5
+}
+
+.close:hover {
+  opacity: 0.5
+}
+
+.clear-data {
+  cursor: pointer;
+}
+
+.favorite {
+  margin-left: 9px;
+}
+
+#menu-nav {
+  position: fixed;
+  bottom: 5px;
+  left: 50%;
+  margin-left: -95px;
+  width: 190px;
+  z-index: 30;
+}
+
+#menu-nav li {
+  text-align: center;
+  width: 24.9%;
+  box-sizing: border-box;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.menu {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    background-color: #fff;
+    width: 30%;
+    height: 100%;
+    display: none;
+    overflow: auto;
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+    z-index: 20;
+}
+
+#favorites-list a {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: 10px 15px;
+  margin-bottom: -1px;
+  background-color: #FFF;
+  border: 1px solid #DDD;
+  border-width: 1px 0px;
+}
+#favorites-list li:first-child a {
+  border-top-width: 0px;
+}
+#favorites-list li:last-child a {
+  border-bottom-width: 0px;
+}
+
+#predictions {
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    background-color: #fff;
+    width: 30%;
+    height: 100%;
+    display: none;
+    overflow: auto;
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+    z-index: 10;
+}
+
+#predictions .last-update {
+  font-size: 11px;
+  line-height: 10px;
+  margin-right: 6px;
+}
+
+#predictions .loading, #predictions .refresh {
+  width: 24px;
+}
+
+#predictions .direction {
+  max-width: calc(100% - 11em);
+}
+
+#predictions .label,
+#predictions .badge {
+    margin-left: 3px;
+}
+
+.close.mobile {
+  display: none;
+}
+.close.desktop {
+  display: block;
+}
+
+@media all and (max-width: 600px) {
+  #predictions, .menu {
+    width: 100%;
+    padding-bottom: 40px;
+  }
+  #menu-nav {
+    height: 40px;
+    bottom: -20px;
+    left: 0;
+    margin-left: 0;
+    width: 100%;
+  }
+  .close.mobile {
+    display: block;
+  }
+  .close.desktop {
+    display: none;
+  }
+}
