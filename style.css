@@ -93,7 +93,7 @@ body {
     -webkit-border-radius: 0px;
     -moz-border-radius: 0px;
     border-radius: 0px;
-    z-index: 1000;
+    z-index: 1001;
 }
 
 #predictions .last-update {
