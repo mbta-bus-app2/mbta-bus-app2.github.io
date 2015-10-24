@@ -258,6 +258,106 @@ var geolocate = function(callback) {
   }
 };
 
+// locations are "lng, lat" in the quadtree, to make "x, y" make more sense
+var stopsQuadtree = QuadTree(-180, -90, 360, 180);
+function onStopsLoad() {
+  for (var i = 0; i < stops.length; i++) {
+    var stop = stops[i];
+    // Everything else calls it lng not lon. TODO possibly
+    // call it lng in stops.js as well:
+    stop.lng = stop.lon;
+    stopsQuadtree.put({x: +stop.lon, y: +stop.lat, w: 0, h: 0, id: stop.id, stop: stop});
+  }
+}
+// currently it is synchronously loaded, so:
+onStopsLoad();
+
+// This returns a L.LatLngBounds that definitely includes
+// everywhere within 'meters' radius along the Earth's surface,
+// and probably (nay, definitely) includes some more area as well,
+// but tries somewhat to minimize the size of that extra area.
+function boundsThatEncompassEverywhereWithinADistanceFrom(latlng, meters) {
+  latlng = L.latLng(latlng);
+  var lat = latlng.lat;
+  var lng = latlng.lng;
+  console.assert(meters >= 0);
+  // TODO go in the other direction if next to the pole:
+  // (actually, if near the pole, we need a different algorithm -
+  // such as cover every lng, and lat up to the pole and down by
+  // meters*1.1)
+  var latplus = L.latLng(lat + 1, lng);
+  var lngplus = L.latLng(lat, lng + 1);
+  var approxMetersPerLatDegree = latlng.distanceTo(latplus);
+  var approxMetersPerLngDegree = latlng.distanceTo(lngplus);
+  var approxLatDelta = meters / approxMetersPerLatDegree * 1.1;
+  var approxLngDelta = meters / approxMetersPerLngDegree * 1.1;
+  var northLat = lat + approxLatDelta;
+  var southLat = lat - approxLatDelta;
+  var eastLng = lng + approxLngDelta;
+  var westLng = lng - approxLngDelta;
+  console.assert(latlng.distanceTo([northLat, lng]) > meters);
+  console.assert(latlng.distanceTo([northLat, lng]) < meters * 1.2);
+  console.assert(latlng.distanceTo([southLat, lng]) > meters);
+  console.assert(latlng.distanceTo([southLat, lng]) < meters * 1.2);
+  console.assert(latlng.distanceTo([lat, eastLng]) > meters);
+  console.assert(latlng.distanceTo([lat, eastLng]) < meters * 1.2);
+  console.assert(latlng.distanceTo([lat, westLng]) > meters);
+  console.assert(latlng.distanceTo([lat, westLng]) < meters * 1.2);
+  return L.latLngBounds([southLat, westLng], [northLat, eastLng]);
+}
+
+// maxDistanceToLook is meters
+//
+// callback(stop, distance): "return false" to break,
+//   return anything else or nothing to keep getting more stops.
+//
+// returns false if "breaked", true if maxDistanceToLook exceeded first.
+function nearestStopsTo(latlng, maxDistanceToLook, callback) {
+  //if(maxDistanceToLook === undefined) {
+  //  maxDistanceToLook = 10000;
+  //}
+  console.assert(maxDistanceToLook >= 0);
+  var latlng = L.latLng(latlng);
+  // the starting value of 'testRadiusInMeters' is only an optimization
+  var testRadiusInMeters = 10;
+  var aboutDone = false;
+  var alreadyFound = {};
+  while(!aboutDone) {
+    if(testRadiusInMeters >= (maxDistanceToLook * 0.7)) {
+      aboutDone = true;
+      testRadiusInMeters = maxDistanceToLook;
+    }
+    var bounds = boundsThatEncompassEverywhereWithinADistanceFrom(latlng, testRadiusInMeters);
+    var qualified = [];
+    stopsQuadtree.get({
+      x: bounds.getWest(),
+      y: bounds.getSouth(),
+      w: bounds.getEast() - bounds.getWest(),
+      h: bounds.getNorth() - bounds.getSouth()
+    }, function(leaf) {
+      var stop = leaf.stop;
+      if(!_.has(alreadyFound, stop.id)) {
+        var distance = latlng.distanceTo([stop.lat, stop.lng]);
+        if(distance <= testRadiusInMeters) {
+          qualified.push([distance, stop]);
+        }
+      }
+      return true; // don't break from the quadtree.get() loop
+    });
+    var sorted = _.sortBy(qualified, function(x){return x[0];});
+    for(var i = 0; i < sorted.length; i++) {
+      var distance = sorted[i][0];
+      var stop = sorted[i][1];
+      alreadyFound[stop.id] = true;
+      if(callback(stop, distance) === false) {
+        return false;
+      }
+    }
+    testRadiusInMeters *= 2.5;
+  }
+  return true;
+}
+
 function initialize() {
   setLocationToNonGeolocatedDefault();
   geolocate();
