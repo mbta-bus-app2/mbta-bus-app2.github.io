@@ -36,8 +36,8 @@ routes.each do |(route_id, route_title)|
       if stops[id].nil?
         stops[id] = {
           :id => id,
-          :lat => /lat="([^"]+)"/.match(stopTag)[1],
-          :lon => /lon="([^"]+)"/.match(stopTag)[1],
+          :lat => /lat="([^"]+)"/.match(stopTag)[1].to_f,
+          :lon => /lon="([^"]+)"/.match(stopTag)[1].to_f,
           :title => /title="([^"]+)"/.match(stopTag)[1],
           :routes => [route_title]
         }
