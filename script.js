@@ -1,3 +1,4 @@
+"use strict";
 
 var storage = function(key, value) {
   if (_.isUndefined(value)) {
