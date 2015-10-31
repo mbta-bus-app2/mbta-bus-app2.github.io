@@ -382,14 +382,28 @@ function nearestStopsTo(latlng, maxDistanceToLook, callback) {
   return true;
 }
 
+function close_predictions() {
+  $('#predictions').hide();
+  currentStop = null;
+  pushState('map');
+}
+
 function initialize() {
   setLocationToNonGeolocatedDefault();
   geolocate();
 
+  $('#predictions').find('.panel-heading').click(function(e) {
+    e.stopPropagation();
+    e.preventDefault();
+  });
+  $('#predictions').click(function(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    close_predictions();
+  });
+
   $('#predictions').find('.close-predictions').click(function() {
-    $('#predictions').hide();
-    currentStop = null;
-    pushState('map');
+    close_predictions();
   });
 
   $('.menu').find('.close-menu').click(function() {
