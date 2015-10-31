@@ -1,5 +1,42 @@
 "use strict";
 
+var pi = Math.PI;
+var tau = 2*Math.PI;
+var cos = Math.cos;
+var sin = Math.sin;
+var asin = Math.asin;
+var atan2 = Math.atan2;
+var deg_to_rad = tau/360;
+var rad_to_deg = 360/tau
+// one of the earth radius methods from https://en.wikipedia.org/wiki/Earth_radius
+var rad_to_meters = 6371007;
+var meters_to_rad = 1 / rad_to_meters;
+
+// bearing in degrees clockwise from north; distance in meters
+function offsetLatLngBy(latlng, bearing, distance) {
+  latlng = L.latLng(latlng);
+  var lat1 = latlng.lat * deg_to_rad;
+  var lng1 = latlng.lng * deg_to_rad;
+  var b = bearing*deg_to_rad;
+  var d = distance*meters_to_rad;
+  // formulae from http://williams.best.vwh.net/avform.htm#LL
+  // (see the intro for what units it uses)
+  var lat2 = asin(sin(lat1)*cos(d)+cos(lat1)*sin(d)*cos(b));
+  var dlng = atan2(sin(b)*sin(d)*cos(lat1),cos(d)-sin(lat1)*sin(lat2));
+  var lng2 = ((lng1 + dlng + pi) % tau ) - pi;
+  return L.latLng(lat2*rad_to_deg, lng2*rad_to_deg);
+}
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/startsWith
+if (!String.prototype.startsWith) {
+  String.prototype.startsWith = function(searchString, position) {
+    position = position || 0;
+    return this.indexOf(searchString, position) === position;
+  };
+}
+
+// https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API
+
 var storage = function(key, value) {
   if (_.isUndefined(value)) {
     try {
@@ -187,6 +224,7 @@ var autoReload = function() {
 var currentStop;
 var initialLocation;
 var boston = { lat: 42.38, lng: -71.1, zoom: 12 };
+var downtownBoston = { lat: 42.36, lng: -71.06 };
 var browserSupportFlag;
 var map;
 var locationBeforeGmapsLoads;
@@ -249,9 +287,15 @@ function onGmapsAndStopsLoad() {
     var stop = stops[i];
     L.circle([stop.lat, stop.lon], 10, {
       //stroke: false,
-      weight: 3,
-      color: '#f70',
-      fillOpacity: 0.7
+      //weight: 3,
+      weight: 2,
+      //color: '#f70',
+      //fillColor: '#333',
+      fillColor: '#423',
+      color: '#768',
+      // I want to tune this by zoom
+      fillOpacity: 0.5,
+      clickable: false
     }).addTo(map);
   }
 }
@@ -522,3 +566,217 @@ var countDown = function() {
   countDownTimer = setTimeout(countDown, 1000);
 };
 countDown();
+
+
+var gtfsRealtimeBuilder = null;
+var gtfsRealtimeFeedMessage = null;
+var loadedGtfsRealtimeProto = $.Deferred();
+var loadedStops = $.Deferred().done();
+var loadedLeaflet = $.Deferred();//.done();
+var loadedProtobuf = $.Deferred();//.done();
+
+var loadGtfsRealtimeUpdate = function(filename, callback) {
+  var result;
+  if(callback === undefined) {
+    var deferred = $.Deferred();
+    callback = function(r) { deferred.resolve(r); };
+    result = deferred.promise();
+  }
+  // jQuery doesn't support binary ajax.
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', 'https://www.idupree.com/services/mbta/'+filename);
+  xhr.responseType = "arraybuffer";
+  xhr.onload = function(e) {
+    callback(gtfsRealtimeFeedMessage.decode(xhr.response));
+  }
+  xhr.send(null);
+  return result;
+}
+
+var protobufUpdateTimeout = null;
+var vehiclesLayerGroups = null;
+var nextPositions = function() {
+  loadGtfsRealtimeUpdate('VehiclePositions.pb').done(function(positions) {
+    if(vehiclesLayerGroups != null) {
+      map.removeLayer(vehiclesLayerGroups);
+    }
+    vehiclesLayerGroups = L.layerGroup().addTo(map);
+    _.each(positions.get_entity(), function(entity) {
+      var vehicle = entity.get_vehicle();
+      var position = vehicle.get_position();
+      var lat = position.get_latitude();
+      var lng = position.get_longitude();
+      var latlng = L.latLng(lat, lng);
+      // bearing is in degrees clockwise from North
+      var bearing = position.get_bearing();
+      if(bearing == null) {
+        bearing = 0; //for now
+      }
+      var back = bearing + 180;
+      var back1 = back + 15;
+      var back2 = back - 15;
+      var trip = vehicle.getTrip();
+      if(trip) {
+        var route_id = trip.getRouteId();
+      }
+      if(route_id == null) {
+        route_id = '';
+      }
+      //var color = '#000';
+      //var fillColor;
+      var style = {
+          weight: 3,
+          //color: '#f27',
+          color: '#000',
+          fillOpacity: 0.9,
+          clickable: false
+      };
+      // len in meters. Lol, I expanded everything so you can see it.
+      // Approximate relative sizes see http://www.transithistory.org/roster/
+      // scale() is a hack which I should probably do based on zoom instead?
+      // maybe?
+      var len = 60;
+      var distanceFromDowntown = latlng.distanceTo(downtownBoston);
+      function scale(minDist, maxDist, amount) {
+        var range = maxDist - minDist;
+        var extra = Math.min(range, Math.max(0, distanceFromDowntown - minDist)) / range;
+        return amount * extra;
+      }
+      // TODO find out if the MBTA has official sRGB colors for its colored routes
+      if(route_id.startsWith("CR-")) {
+         style.weight = 1.5;
+         style.fillColor = '#e4c';
+         len = 250 + scale(10000, 30000, 2000);
+      } else if(route_id.startsWith("Green")) {
+         style.weight = 1;
+         style.fillColor = '#7f7';
+         // TODO: can we find out how many cars each
+         // GL train has, and show each of them
+         // or probably actually more clearly,
+         // a longer train if more cars?  EVEN BETTER:
+         // can we tell which cars are Type 7 vs Type 8
+         // for preemptive accessibility alignment?
+         len = 120 + scale(9000, 11000, 300);
+      } else if(route_id.startsWith("Red")) {
+         style.weight = 1;
+         style.fillColor = '#f22';
+         //lol the length is right but too wide: len = 6*100;
+         len = 200 + scale(8000, 10000, 150);
+      } else if(route_id.startsWith("Orange")) {
+         style.weight = 1;
+         style.fillColor = '#f70';
+         len = 200;
+         if(lat > downtownBoston.lat) {
+           len += scale(2000, 3000, 150);
+         }
+      } else if(route_id.startsWith("Blue")) {
+         style.weight = 1;
+         style.fillColor = '#33f';
+         len = 165 + scale(2000, 3000, 80);
+      }
+      vehiclesLayerGroups.addLayer(L.polygon([
+        offsetLatLngBy(latlng, back1, len),
+        latlng,
+        offsetLatLngBy(latlng, back2, len)
+        ], style));
+        //.addTo(map);
+    });
+
+    var now = Date.now();
+    lastProtobufUpdate = now;
+    // Keep on updating for a few minutes after the window is hidden,
+    // because the user is likely to come back to it and it
+    // doesn't cost drastically more than using the app in the
+    // first place.
+    //
+    // The multiple idle-checking methods are there because we
+    // really don't want to waste mobile users' data plans, and we
+    // only somewhat mind making multi-windowed desktop users have
+    // their thing get out of date?? I could detect whether it's a
+    // large screen but they can use mobile tethering too; mobile
+    // data can be faster than landline; I could detect whether the
+    // user's current IP address is a mobile one. Lol.  I could also
+    // have a setting, if the user feels reliable about choosing the
+    // right setting.
+    var minute = 60000;
+    var estimatedInactivityTime = Math.max(
+      ((lastVisible == null) ? (0) : (now - lastVisible)),
+      ((lastFocused == null) ? (0) : (now - lastFocused - 5*minute)),
+      (now - lastUserActivity - 5*minute));
+    if(estimatedInactivityTime < 1.5*minute) {
+      protobufUpdateTimeout = setTimeout(nextPositions, 0.25*minute);
+    } else if(estimatedInactivityTime < 3*minute) {
+      protobufUpdateTimeout = setTimeout(nextPositions, 0.40*minute);
+    } else if(estimatedInactivityTime < 6*minute) {
+      protobufUpdateTimeout = setTimeout(nextPositions, 0.75*minute);
+    } else if(estimatedInactivityTime < 12*minute) {
+      protobufUpdateTimeout = setTimeout(nextPositions, 2*minute);
+    } else if(estimatedInactivityTime < 24*minute) {
+      protobufUpdateTimeout = setTimeout(nextPositions, 4*minute);
+    } else {
+      protobufUpdateTimeout = null;
+    }
+  });
+};
+
+var lastUserActivity = Date.now();
+function userActivity() {
+  lastUserActivity = Date.now();
+}
+// Not 'resize' or 'contextmenu' events because that
+// might be annoying for development and doesn't matter much.
+//
+// Should I consider removing mousemove, or removing it
+// if it's happened recently, to save CPU?
+//
+// I include redundant things like click and mousedown and touchstart
+// because different input methods can trigger different combinations
+// of events, and because it doesn't hurt.
+$(document).on('click mousemove keydown mousedown touchstart mouseenter scroll wheel dblclick paste dragstart', userActivity);
+
+function awakeFromSlumber() {
+  userActivity();
+  if(lastProtobufUpdate + 15000 < Date.now()) {
+    clearTimeout(protobufUpdateTimeout);
+    nextPositions();
+  }
+}
+
+var lastProtobufUpdate = null;
+var lastVisible = null;
+$(document).on('visibilitychange', function() {
+  console.log('visibilitychange', Date.now(), document.hidden);
+  if(document.hidden) {
+    lastVisible = Date.now();
+    //for testing: $(document.body).css('transform', 'rotate(60deg)');
+  } else {
+    lastVisible = null;
+    awakeFromSlumber();
+  }
+});
+var lastFocused = null;
+$(window).on('blur', function() {
+  console.log('window blur', Date.now());
+  lastFocused = Date.now();
+});
+$(window).on('focus', function() {
+  console.log('window focus', Date.now());
+  lastFocused = null;
+  awakeFromSlumber();
+});
+
+// at the moment, just once, repeating will be later
+loadedGtfsRealtimeProto.done(function() {
+  nextPositions();
+});
+
+// hmm, I could request the file text in parallel with protobuf really
+loadedProtobuf.done(function() {
+  dcodeIO.ProtoBuf.loadProtoFile("./gtfs-realtime.proto",
+    function(err, loaded) {
+      gtfsRealtimeBuilder = loaded;
+      gtfsRealtimeFeedMessage = gtfsRealtimeBuilder.build("transit_realtime.FeedMessage");
+      loadedGtfsRealtimeProto.resolve();
+    });
+});
+
