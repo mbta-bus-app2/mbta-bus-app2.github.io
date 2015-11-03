@@ -116,10 +116,10 @@ body {
     margin-left: 3px;
 }
 
-.close.mobile {
+.close > .mobile {
   display: none;
 }
-.close.desktop {
+.close > .desktop {
   display: block;
 }
 
@@ -135,10 +135,10 @@ body {
     margin-left: 0;
     width: 100%;
   }
-  .close.mobile {
+  .close > .mobile {
     display: block;
   }
-  .close.desktop {
+  .close > .desktop {
     display: none;
   }
 }
