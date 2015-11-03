@@ -255,8 +255,11 @@ window.onGmapsLoad = function() {
     zoom: zoom,
     layers: mapboxTiles,
     // Sometimes the inertial movement seems to take you way too far (bug?)
-    // so turn it off for now
-    inertia: false,
+    // because the leaflet 1.0 beta defaults not to limit inertia speed.
+    // Perhaps max speed should depend on window/screen width so that
+    // you can have at most a screen worth of inertia?
+    inertiaMaxSpeed: 1700,
+    inertiaDeceleration: 3400, // which is the default in the 1.0beta2
     // In the current leaflet beta:
     // - with canvas, zooming doesn't look as good
     // - in chrome, svg is super fast and awesome, and canvas is decently fast
