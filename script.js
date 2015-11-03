@@ -78,7 +78,7 @@ var displayUnixTimeOfArrival = function(time) {
 
 // epochTime is in milliseconds
 var formatPredictionRow = function(prediction) {
-  var $li = $('<li class="list-group-item">');
+  var $li = $('<li class="prediction-item">');
   var $route = $('<span class="label label-primary pull-left route">');
   $route.text(prediction.route);
   var $dir = $('<span class="label label-info pull-left direction">');

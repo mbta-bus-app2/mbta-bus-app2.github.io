@@ -96,6 +96,9 @@ body {
   z-index: 1001;
   background: linear-gradient(to bottom, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
 }
+.prediction-item {
+  padding: 5px 15px;
+}
 
 #predictions .last-update {
   font-size: 11px;
