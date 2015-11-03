@@ -99,6 +99,9 @@ body {
 .prediction-item {
   padding: 5px 15px;
 }
+.prediction-item:first-child {
+  padding-top: 10px;
+}
 
 #predictions .last-update {
   font-size: 11px;
