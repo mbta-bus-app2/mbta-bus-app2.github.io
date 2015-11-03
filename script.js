@@ -254,6 +254,9 @@ window.onGmapsLoad = function() {
     center: center,
     zoom: zoom,
     layers: mapboxTiles,
+    // Sometimes the inertial movement seems to take you way too far (bug?)
+    // so turn it off for now
+    inertia: false,
     // In the current leaflet beta:
     // - with canvas, zooming doesn't look as good
     // - in chrome, svg is super fast and awesome, and canvas is decently fast
