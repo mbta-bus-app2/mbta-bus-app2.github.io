@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>MBTA Bus App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <link rel="stylesheet" href="libs/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="libs/leaflet/leaflet.css" />
+  </head>
+  <body>
+    <script src="libs/underscore-min.js"></script>
+    <script src="libs/jquery.min.js"></script>
+    <script src="libs/bootstrap/js/bootstrap.min.js"></script>
+    <script src="libs/qtree.js"></script>
+    <script src="libs/leaflet/leaflet.js"></script>
+    <script src="bower_components/long/dist/long.js"></script>
+    <script src="bower_components/bytebuffer/dist/ByteBufferAB.js"></script>
+    <script src="bower_components/protobuf/dist/ProtoBuf.js"></script>
+<script>
+$(function() {
+"use strict";
+
+var ProtoBuf = dcodeIO.ProtoBuf;
+console.assert(ProtoBuf);
+ProtoBuf.loadProtoFile("./gtfs-realtime.proto", function(err, gtfs_realtime_proto){
+  var Message = gtfs_realtime_proto.build("transit_realtime.FeedMessage");
+
+  _.each(['TripUpdates.pb', 'VehiclePositions.pb'], function(f) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'https://www.idupree.com/services/mbta/'+f);
+    xhr.responseType = "arraybuffer";
+    xhr.onload = function(evt) {
+      var msg = Message.decode(xhr.response);
+      //alert(JSON.stringify(msg, null, 4)); // Correctly decoded
+      //console.log(msg);
+      //console.log(JSON.parse(JSON.stringify(msg, null, 4)));
+      console.log(f, xhr.response.byteLength,
+        JSON.stringify(msg, null, 4).substring(0,10000));
+    }
+    xhr.send(null);
+  });
+});
+
+});
+</script>
+  </body>
+</html>
