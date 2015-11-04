@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <link rel="stylesheet" href="libs/bootstrap/css/bootstrap.min.css" />
     <link rel="stylesheet" href="libs/leaflet/leaflet.css" />
+<style>
+p {
+  white-space: pre-wrap;
+  float: left;
+}
+</style>
   </head>
   <body>
     <script src="libs/underscore-min.js"></script>
@@ -31,11 +37,9 @@ ProtoBuf.loadProtoFile("./gtfs-realtime.proto", function(err, gtfs_realtime_prot
     xhr.responseType = "arraybuffer";
     xhr.onload = function(evt) {
       var msg = Message.decode(xhr.response);
-      //alert(JSON.stringify(msg, null, 4)); // Correctly decoded
-      //console.log(msg);
-      //console.log(JSON.parse(JSON.stringify(msg, null, 4)));
-      console.log(f, xhr.response.byteLength,
-        JSON.stringify(msg, null, 4).substring(0,10000));
+      $('body').append(
+        $('<p>').text(f + '\n' + xhr.response.byteLength + '\n' +
+        JSON.stringify(msg, null, 4).substring(0,10000000)));
     }
     xhr.send(null);
   });
