@@ -26,6 +26,17 @@ p {
 $(function() {
 "use strict";
 
+var pageloadtime = Date.now();
+var lasttime = null;
+function time(desc) {
+  var time = Date.now();
+  if(lasttime !== null) {
+    console.log('lasted: ' + (time - lasttime));
+  }
+  console.log(desc + ' begins at: ' + (time - pageloadtime));
+  lasttime = time;
+}
+
 var ProtoBuf = dcodeIO.ProtoBuf;
 console.assert(ProtoBuf);
 ProtoBuf.loadProtoFile("./gtfs-realtime.proto", function(err, gtfs_realtime_proto){
@@ -36,10 +47,25 @@ ProtoBuf.loadProtoFile("./gtfs-realtime.proto", function(err, gtfs_realtime_prot
     xhr.open('GET', 'https://www.idupree.com/services/mbta/'+f);
     xhr.responseType = "arraybuffer";
     xhr.onload = function(evt) {
+      lasttime = null;
+      console.log(f);
+      time('decode');
       var msg = Message.decode(xhr.response);
+      time('stringify');
+      var json = JSON.stringify(msg, null, '\t');
+      time('num_entities');
+      var num_entities = msg.get('entity').length;
+      time('save to window');
+      window[f.replace('.pb', '')] = msg
+      time('put in dom');
       $('body').append(
-        $('<p>').text(f + '\n' + xhr.response.byteLength + '\n' +
-        JSON.stringify(msg, null, 4).substring(0,10000000)));
+        $('<p>').text(
+          'file: ' + f + '\n' +
+          'protobuf bytes: ' + xhr.response.byteLength + '\n' +
+          'json bytes: ' + json.length + '\n' +
+          'gtfs-realtime entities: ' + num_entities + '\n' +
+          json.substring(0,10000000)));
+      time('done');
     }
     xhr.send(null);
   });
