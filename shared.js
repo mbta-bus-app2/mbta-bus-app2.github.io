@@ -147,3 +147,6 @@ function nearestStopsTo(latlng, maxDistanceToLook, stopsQuadtree, callback) {
   return true;
 }
 
+var gtfsRealtimeBuilder = null;
+var gtfsRealtimeFeedMessage = null;
+

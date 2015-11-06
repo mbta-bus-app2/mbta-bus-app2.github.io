@@ -437,29 +437,30 @@ var countDown = function() {
 countDown();
 
 
-var gtfsRealtimeBuilder = null;
-var gtfsRealtimeFeedMessage = null;
 var loadedGtfsRealtimeProto = $.Deferred();
 var loadedStops = $.Deferred().done();
 var loadedLeaflet = $.Deferred();//.done();
 var loadedProtobuf = $.Deferred();//.done();
 
-var loadGtfsRealtimeUpdate = function(filename, callback) {
-  var result;
-  if(callback === undefined) {
-    var deferred = $.Deferred();
-    callback = function(r) { deferred.resolve(r); };
-    result = deferred.promise();
+
+var workerForLoadingUpdates = new Worker("worker.js");
+var vehiclePositionsCallbacks = [];
+workerForLoadingUpdates.onmessage = function(e) {
+  if(e.data.type == 'loadedVehiclePositions') {
+    var cbs = vehiclePositionsCallbacks;
+    vehiclePositionsCallbacks = [];
+    cbs.forEach(function(cb) {
+      cb(e.data.data);
+    });
   }
-  // jQuery doesn't support binary ajax.
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', 'https://www.idupree.com/services/mbta/'+filename);
-  xhr.responseType = "arraybuffer";
-  xhr.onload = function(e) {
-    callback(gtfsRealtimeFeedMessage.decode(xhr.response));
-  }
-  xhr.send(null);
-  return result;
+};
+var loadGtfsRealtimeUpdate = function(filename) {
+  var deferred = $.Deferred();
+  vehiclePositionsCallbacks.push(function(data) {
+    deferred.resolve(data);
+  });
+  workerForLoadingUpdates.postMessage('loadVehiclePositions');
+  return deferred.promise();
 }
 
 var protobufUpdateTimeout = null;
@@ -470,23 +471,23 @@ var nextPositions = function() {
       map.removeLayer(vehiclesLayerGroups);
     }
     vehiclesLayerGroups = L.layerGroup().addTo(map);
-    _.each(positions.get_entity(), function(entity) {
-      var vehicle = entity.get_vehicle();
-      var position = vehicle.get_position();
-      var lat = position.get_latitude();
-      var lng = position.get_longitude();
+    _.each(positions.entity, function(entity) {
+      var vehicle = entity.vehicle;
+      var position = vehicle.position;
+      var lat = position.latitude;
+      var lng = position.longitude;
       var latlng = L.latLng(lat, lng);
       // bearing is in degrees clockwise from North
-      var bearing = position.get_bearing();
+      var bearing = position.bearing;
       if(bearing == null) {
         bearing = 0; //for now
       }
       var back = bearing + 180;
       var back1 = back + 15;
       var back2 = back - 15;
-      var trip = vehicle.getTrip();
+      var trip = vehicle.trip;
       if(trip) {
-        var route_id = trip.getRouteId();
+        var route_id = trip.route_id;
       }
       if(route_id == null) {
         route_id = '';
