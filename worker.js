@@ -3,7 +3,7 @@
 // TODO min.js consistency here and in html
 importScripts(
   'libs/underscore-min.js',
-  'bower_components/es6-promise/promise.min.js',
+  //'bower_components/es6-promise/promise.min.js',
   'libs/qtree.js',
   // can't include leaflet here unless I hackily define window={}... 'libs/leaflet/leaflet.js',
   'bower_components/long/dist/long.js',
