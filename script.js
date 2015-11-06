@@ -498,8 +498,9 @@ function nextPositionsWriteSomePositions(positions, i, newVehiclesLayerGroups) {
       var back1 = back + 15;
       var back2 = back - 15;
       var trip = vehicle.trip;
+      var route_id = null;
       if(trip) {
-        var route_id = trip.route_id;
+        route_id = trip.route_id;
       }
       if(route_id == null) {
         route_id = '';
