@@ -16,14 +16,17 @@ $.ajax({
 // https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API
 
 var storage = function(key, value) {
-  if (_.isUndefined(value)) {
+  key = 'transit_web_app_' + key;
+  if (arguments.length === 1) {
     try {
-      return JSON.parse(window.localStorage.getItem(key));
+      return JSON.parse(localStorage.getItem(key));
     } catch (e) {
-      return void(0);
+      return undefined;
     }
+  } else if(value == null) {
+    localStorage.removeItem(key);
   } else {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(key, JSON.stringify(value));
   }
 };
 
