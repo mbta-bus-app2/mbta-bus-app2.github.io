@@ -1,5 +1,17 @@
 "use strict";
 
+var loadedGtfsRealtimeProto = $.Deferred();
+var loadedStops = $.Deferred();
+var loadedLeaflet = $.Deferred();
+var loadedProtobuf = $.Deferred();
+
+$.ajax({
+  url: 'stops.js',
+  dataType: 'script',
+  cache: true,
+  success: function() {
+    loadedStops.resolve();
+  }});
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API
 
@@ -70,23 +82,25 @@ var closeMenus = function() {
 };
 
 var setupFavorites = function() {
-  var $list = $('#favorites-list');
-  var favorites = storage('favorites');
-  $list.empty();
-  _.each(favorites, function(stopId) {
-    var stop = _.findWhere(stops, {id: stopId});
-    $list.append(
-      $('<li/>', {
-        }).append(
-        $('<a/>', {
-//        "class": "list-group-item",
-          "href": "#stops/"+stopId,
-          "data-id": stop.id,
-          "data-lat": stop.lat,
-          "data-lon": stop.lon,
-          "data-title": stop.title,
-          text: stopNickname(stop)
+  loadedStops.done(function() {
+    var $list = $('#favorites-list');
+    var favorites = storage('favorites');
+    $list.empty();
+    _.each(favorites, function(stopId) {
+      var stop = _.findWhere(stops, {id: stopId});
+      $list.append(
+        $('<li/>', {
+          }).append(
+          $('<a/>', {
+//          "class": "list-group-item",
+            "href": "#stops/"+stopId,
+            "data-id": stop.id,
+            "data-lat": stop.lat,
+            "data-lon": stop.lon,
+            "data-title": stop.title,
+            text: stopNickname(stop)
           })));
+    });
   });
 };
 
@@ -234,8 +248,7 @@ window.onGmapsLoad = function() {
     storage('lat', map.getCenter().lat);
     storage('lng', map.getCenter().lng);
   });
-  // for now, assume stops is already loaded
-  onGmapsAndStopsLoad();
+  loadedStops.done(onGmapsAndStopsLoad);
 }
 function onGmapsAndStopsLoad() {
   for (var i = 0; i < stops.length; i++) {
@@ -292,8 +305,7 @@ function onStopsLoad() {
     stopsQuadtree.put({x: +stop.lon, y: +stop.lat, w: 0, h: 0, id: stop.id, stop: stop});
   }
 }
-// currently it is synchronously loaded, so:
-onStopsLoad();
+loadedStops.done(onStopsLoad);
 
 function close_predictions() {
   $('#predictions').hide();
@@ -436,11 +448,6 @@ var countDown = function() {
 };
 countDown();
 
-
-var loadedGtfsRealtimeProto = $.Deferred();
-var loadedStops = $.Deferred().done();
-var loadedLeaflet = $.Deferred();//.done();
-var loadedProtobuf = $.Deferred();//.done();
 
 
 var workerForLoadingUpdates = new Worker("worker.js");
