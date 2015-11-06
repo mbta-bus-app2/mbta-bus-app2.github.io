@@ -180,12 +180,47 @@ var autoReload = function() {
   setTimeout(autoReload, 60 * 1000);
 };
 
+var map;
+// In the current leaflet beta:
+// - with canvas, zooming doesn't look as good
+// - in chrome, svg is super fast and awesome, and canvas is decently fast
+// - in firefox, svg is horribly slow and canvas is rather slow
+// - haven't tested in IE yet
+// Leaflet defaults to SVG.
+// This setting, if 'true', overrides that to default to canvas.
+// This is my current heuristic:
+var defaultRenderer = (
+  (/Gecko\//.test(navigator.userAgent))
+  ? 'canvas' : 'svg');
+$('.default-renderer-text').text('Default (' + defaultRenderer + ')');
+var renderer;
+function setRenderer(r) {
+  if(r == null || r === 'default') {
+    renderer = defaultRenderer;
+    $('input[name="renderer"][value="default"]').prop('checked', true);
+    storage('renderer', undefined);
+  } else {
+    renderer = r;
+    $('input[name="renderer"][value="'+r+'"]').prop('checked', true);
+    storage('renderer', r);
+  }
+  console.log("renderer: " + renderer + ": " + r);
+}
+setRenderer(storage('renderer'));
+$('input[name="renderer"]').on('change', function(e) {
+  var val = $('input[name="renderer"]:checked').val();
+  setRenderer(val);
+  if(map) {
+    document.location.reload();
+  }
+});
+
+
 var currentStop;
 var initialLocation;
 var boston = { lat: 42.38, lng: -71.1, zoom: 12 };
 var downtownBoston = { lat: 42.36, lng: -71.06 };
 var browserSupportFlag;
-var map;
 var locationBeforeGmapsLoads;
 function setLocation(lat, lng, zoom) {
   if(map) {
@@ -226,15 +261,7 @@ window.onGmapsLoad = function() {
     // and less if inertia doesn't start out going at max speed.
     inertiaMaxSpeed: 1000, // pixels/second
     inertiaDeceleration: 2000, // pixels/second/second
-    // In the current leaflet beta:
-    // - with canvas, zooming doesn't look as good
-    // - in chrome, svg is super fast and awesome, and canvas is decently fast
-    // - in firefox, svg is horribly slow and canvas is rather slow
-    // - haven't tested in IE yet
-    // Leaflet defaults to SVG.
-    // This setting, if 'true', overrides that to default to canvas.
-    // This is my current heuristic:
-    preferCanvas: L.Browser.gecko
+    preferCanvas: renderer === 'canvas'
     });
   function onMapClick(e) {
     nearestStopsTo(e.latlng, 10000, stopsQuadtree, function(stop, distance) {
