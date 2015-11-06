@@ -466,12 +466,17 @@ var loadGtfsRealtimeUpdate = function(filename) {
 var protobufUpdateTimeout = null;
 var vehiclesLayerGroups = null;
 var nextPositions = function() {
-  loadGtfsRealtimeUpdate('VehiclePositions.pb').done(function(positions) {
-    if(vehiclesLayerGroups != null) {
-      map.removeLayer(vehiclesLayerGroups);
-    }
-    vehiclesLayerGroups = L.layerGroup().addTo(map);
-    _.each(positions.entity, function(entity) {
+  loadGtfsRealtimeUpdate('VehiclePositions.pb').done(nextPositionsGtfsLoaded);
+}
+function nextPositionsGtfsLoaded(positions) {
+  var newVehiclesLayerGroups = L.layerGroup();
+  nextPositionsWriteSomePositions(positions, 0, newVehiclesLayerGroups);
+}
+function nextPositionsWriteSomePositions(positions, i, newVehiclesLayerGroups) {
+    var numVehicles = positions.entity.length;
+    var startTime = Date.now();
+    for(; i < numVehicles && Date.now() - startTime < 10; i++) {
+      var entity = positions.entity[i];
       var vehicle = entity.vehicle;
       var position = vehicle.position;
       var lat = position.latitude;
@@ -544,13 +549,29 @@ var nextPositions = function() {
          style.fillColor = '#33f';
          len = 165 + scale(2000, 3000, 80);
       }
-      vehiclesLayerGroups.addLayer(L.polygon([
+      newVehiclesLayerGroups.addLayer(L.polygon([
         offsetLatLngBy(latlng, back1, len),
         latlng,
         offsetLatLngBy(latlng, back2, len)
         ], style));
-        //.addTo(map);
-    });
+    }
+    if(i < numVehicles) {
+      setImmediate(function() {
+        nextPositionsWriteSomePositions(positions, i, newVehiclesLayerGroups);
+      });
+    } else {
+      // setImmediate for extra caution in case we've used up several ms already
+      // and nextPositionsDone also takes up a significant part of a frame
+      setImmediate(function() {
+        nextPositionsDone(newVehiclesLayerGroups);
+      });
+    }
+}
+function nextPositionsDone(newVehiclesLayerGroups) {
+    if(vehiclesLayerGroups != null) {
+      map.removeLayer(vehiclesLayerGroups);
+    }
+    vehiclesLayerGroups = newVehiclesLayerGroups.addTo(map);
 
     var now = Date.now();
     lastProtobufUpdate = now;
@@ -586,7 +607,6 @@ var nextPositions = function() {
     } else {
       protobufUpdateTimeout = null;
     }
-  });
 };
 
 var lastUserActivity = Date.now();
@@ -635,7 +655,6 @@ $(window).on('focus', function() {
   awakeFromSlumber();
 });
 
-// at the moment, just once, repeating will be later
 loadedGtfsRealtimeProto.done(function() {
   nextPositions();
 });

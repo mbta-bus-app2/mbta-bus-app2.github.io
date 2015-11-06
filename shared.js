@@ -12,6 +12,18 @@ var rad_to_deg = 360/tau
 var rad_to_meters = 6371007;
 var meters_to_rad = 1 / rad_to_meters;
 
+// self is the global object in both the main thread and web workers
+if(self.setImmediate === undefined) {
+  self.setImmediate = function(cb) {
+    // inferior as it apparently has to wait 5ms
+    // as required by setTimeout spec:
+    return setTimeout(cb, 0);
+  };
+  self.clearImmediate = function(id) {
+    clearTimeout(id);
+  };
+}
+
 // bearing in degrees clockwise from north; distance in meters
 function offsetLatLngBy(latlng, bearing, distance) {
   latlng = L.latLng(latlng);
