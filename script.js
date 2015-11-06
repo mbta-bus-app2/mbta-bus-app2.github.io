@@ -520,7 +520,7 @@ function nextPositionsWriteSomePositions(positions, i, newVehiclesLayerGroups) {
       // maybe?
       var len = 60;
       var distanceFromDowntown = latlng.distanceTo(downtownBoston);
-      function scale(minDist, maxDist, amount) {
+      var scale = function(minDist, maxDist, amount) {
         var range = maxDist - minDist;
         var extra = Math.min(range, Math.max(0, distanceFromDowntown - minDist)) / range;
         return amount * extra;
