@@ -190,7 +190,7 @@ var map;
 // This setting, if 'true', overrides that to default to canvas.
 // This is my current heuristic:
 var defaultRenderer = (
-  (/Gecko\//.test(navigator.userAgent))
+  (/Gecko\/|Trident\//.test(navigator.userAgent))
   ? 'canvas' : 'svg');
 $('.default-renderer-text').text('Default (' + defaultRenderer + ')');
 var renderer;
