@@ -481,6 +481,10 @@ countDown();
 
 
 var workerForLoadingUpdates = new Worker("worker.js");
+//workerForLoadingUpdates.onerror = function(e){
+//  console.log('worker-err');
+//  throw new Error(e.filename + ':' + e.lineno + ': ' + e.message);
+//};
 var vehiclePositionsCallbacks = [];
 workerForLoadingUpdates.onmessage = function(e) {
   if(e.data.type == 'loadedVehiclePositions') {
