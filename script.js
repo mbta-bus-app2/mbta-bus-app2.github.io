@@ -156,7 +156,7 @@ var loadStop = function(stop) {
   $('#predictions').find('.refresh').hide();
   $.ajax({
     type: 'GET',
-    url: 'http://webservices.nextbus.com/service/publicXMLFeed' +
+    url: 'https://www.idupree.com/services/nextbus/publicXMLFeed' +
       '?command=predictions&a=mbta&stopId=' + stop.id,
     dataType: 'xml',
     success: function(data) {
