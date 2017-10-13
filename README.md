@@ -1,7 +1,7 @@
 MBTA realtime bus information app
 ====
 
-Live at http://mbta-bus-app.greenriver.com/
+Live at https://mbta-bus-app2.github.io/
 
 Screenshot of desktop interface
 ====
